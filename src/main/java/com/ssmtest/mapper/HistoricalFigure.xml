@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+	<mapper namespace="com.ssmtest.mapper.HistoricalFigureMapper">
+		<resultMap type="HistoricalFigure" id="historicalfigureBean" >
+			<id column="hid" property="id" />
+			<result column="hname" property="name" />
+			<result column="year" property="year" />
+			<result column="achievement" property="achievement" />
+
+			<!-- 多对一的关系 -->
+			<!-- property:指的是属性名称，javaType:指的是属性的类型 -->
+			<association property="category" javaType="Category">
+				<id column="cid" property="id" />
+				<result column="cname" property="name" />
+			</association>
+		</resultMap>
+
+
+		<insert id="add" parameterType="HistoricalFigure" >
+			insert into historicalfigure_ (name,year,achievement,cid) values (#{name},#{year},#{achievement},#{category.id})
+		</insert>
+
+		<delete id="delete" parameterType="_int">
+			delete from historicalfigure_ where id=#{id}
+		</delete>
+
+		<select id="getOne" parameterType="_int" resultMap="historicalfigureBean">
+			<!-- select * from historicalfigure_ where id=#{id} -->
+			select c.*,h.*, c.id 'cid', h.id 'hid', c.name 'cname', h.name 'hname' from category_ c left join historicalfigure_ h on c.id = h.cid where h.id=#{id}
+		</select>
+
+		<update id="update" parameterType="HistoricalFigure">
+			update historicalfigure_ 
+			 <set>
+			 	<if test="name != null">name=#{name},</if>
+			 	<if test="year != null">year=#{year},</if>
+			 	<if test="achievement != null">achievement=#{achievement},</if>
+			 	<if test="category != null">cid=#{category.id}</if>
+			 </set>
+			 where id=#{id}
+		</update>
+
+		<select id="list" parameterType="map" resultMap="historicalfigureBean">
+			<!-- 和Category.xml的关联查询不一样，historicalfigure_ h和category_ c换了位置 -->
+			select c.*,h.*, c.id 'cid', h.id 'hid', c.name 'cname', h.name 'hname' from historicalfigure_ h left join category_ c on c.id = h.cid
+			where h.cid = #{category.id} order by h.id desc
+			<!-- <if test="category.id!=0">
+				where h.cid = #{category.id} order by h.id desc
+			</if>	 -->		
+			<if test="page.start!=null and page.count!=null">
+				limit #{page.start},#{page.count}
+			</if>
+		</select>
+
+		<select id="total" parameterType="Category" resultType="_int">
+			select count(*) from historicalfigure_ 
+			<!-- <if test="id!=0">
+				where cid = #{id}
+			</if> -->
+			where cid = #{id}
+		</select>
+			
+	</mapper>
